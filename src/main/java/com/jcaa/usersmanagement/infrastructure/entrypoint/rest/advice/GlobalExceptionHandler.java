@@ -1,6 +1,8 @@
 package com.jcaa.usersmanagement.infrastructure.entrypoint.rest.advice;
 
 import com.jcaa.usersmanagement.domain.exception.DomainException;
+import com.jcaa.usersmanagement.domain.exception.CellphoneAlreadyExistsException;
+import com.jcaa.usersmanagement.domain.exception.CellphoneNotFoundException;
 import com.jcaa.usersmanagement.domain.exception.InvalidCredentialsException;
 import com.jcaa.usersmanagement.domain.exception.UserAlreadyExistsException;
 import com.jcaa.usersmanagement.domain.exception.UserNotFoundException;
@@ -17,6 +19,18 @@ import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+  @ExceptionHandler(CellphoneNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public ApiErrorResponse handleCellphoneNotFound(final CellphoneNotFoundException exception) {
+    return new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), exception.getMessage());
+  }
+
+  @ExceptionHandler(CellphoneAlreadyExistsException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ApiErrorResponse handleCellphoneAlreadyExists(final CellphoneAlreadyExistsException exception) {
+    return new ApiErrorResponse(HttpStatus.CONFLICT.value(), exception.getMessage());
+  }
 
   @ExceptionHandler(UserNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)

@@ -12,6 +12,11 @@ import org.springframework.context.annotation.Configuration;
     type = SecuritySchemeType.HTTP,
     scheme = "bearer",
     bearerFormat = "JWT")
+@io.swagger.v3.oas.annotations.OpenAPIDefinition(
+    info = @io.swagger.v3.oas.annotations.info.Info(
+        title = "Users Management API",
+        version = "2.2.0",
+        description = "CRUDL de usuarios y celulares protegidos con JWT según rol."))
 public class OpenApiConfig {
 
   public static final String BEARER_AUTH = "bearerAuth";
