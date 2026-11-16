@@ -1,0 +1,23 @@
+name: Java CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Java 17 and Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Test and package
+        run: bash ./mvnw --batch-mode --no-transfer-progress clean verify
+      - name: Build Docker image
+        run: docker build --tag users-management:${{ github.sha }} .
