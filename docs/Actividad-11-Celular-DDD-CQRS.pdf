@@ -1,0 +1,161 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 3166 >>
+stream
+BT
+/F1 9 Tf
+48 790 Td
+12 TL
+(ACTIVIDAD 11 - CELULAR,Arquitectura DDD, Hexagonal y CQRS,Java 17 Spring Boot 3.3.5 MySQL Spring JDBC) Tj T*
+() Tj T*
+(Actividad 11: Gestion de celulares) Tj T*
+() Tj T*
+(Objetivo) Tj T*
+() Tj T*
+(Extender el microservicio de usuarios existente con operaciones CRUDL para celulares,) Tj T*
+(conservando Java 17, Spring Boot, MySQL y Spring JDBC. La solucion aplica DDD,) Tj T*
+(Arquitectura Hexagonal, CQRS, SOLID e inversion de dependencias.) Tj T*
+() Tj T*
+(Modelo de dominio) Tj T*
+() Tj T*
+(CellphoneModel contiene UUID, marca, IMEI, pantalla, megapixeles, memoria RAM,) Tj T*
+(almacenamiento, sistema operativo, operador, tecnologia de banda, conectividad,) Tj T*
+(camaras, CPU, NFC, huella, infrarrojo, resistencia al agua y cantidad de SIM. IMEI es) Tj T*
+(texto para conservar ceros iniciales. Se valida con 15 digitos; la tabla impone) Tj T*
+(unicidad. Las magnitudes positivas no aceptan valores cero o negativos segun el campo.) Tj T*
+(El almacenamiento secundario es opcional. Los booleanos son obligatorios y admiten) Tj T*
+(false sin tratarlo como dato ausente.) Tj T*
+() Tj T*
+(Arquitectura) Tj T*
+() Tj T*
+(- Dominio: modelo y excepciones sin dependencias de Spring o persistencia.) Tj T*
+(- Aplicacion: commands, query y handlers; entrada mediante CellphoneCommandUseCase) Tj T*
+(y CellphoneQueryUseCase; salida por puertos JDBC separados de lectura y escritura.) Tj T*
+(- Adaptadores: JdbcTemplate parametrizado para MySQL y mapper JDBC dedicado.) Tj T*
+(- REST: controller fino, DTO validados, mapper HTTP y traduccion uniforme de errores.) Tj T*
+() Tj T*
+(La lectura no modifica datos. Las escrituras usan @Transactional respaldado por) Tj T*
+(DataSourceTransactionManager. CQRS separa responsabilidades y contratos, sin una) Tj T*
+(segunda base de datos ni mensajeria.) Tj T*
+() Tj T*
+(Migraciones y datos existentes) Tj T*
+() Tj T*
+(Flyway marca en V1 los esquemas preexistentes y aplica V2 para crear cellphones con) Tj T*
+(IMEI unico. V1 usa CREATE TABLE IF NOT EXISTS para instalaciones nuevas y preserva) Tj T*
+(users; no se eliminan tablas ni columnas. schema.sql permanece para la inicializacion) Tj T*
+(del contenedor MySQL nuevo, mientras Flyway versiona los cambios de la aplicacion.) Tj T*
+() Tj T*
+(Seguridad y permisos) Tj T*
+() Tj T*
+(El registro publico de usuario y el login permanecen disponibles. Lectura de usuarios y) Tj T*
+(celulares: ADMIN o REVIEWER. Creacion, actualizacion y eliminacion: ADMIN. JWT no tiene) Tj T*
+(secreto de respaldo conocido: la aplicacion requiere JWTSECRET Base64 con al menos) Tj T*
+(32 bytes. Las contrasenas de Usuario continuan protegidas con BCrypt y no se exponen en) Tj T*
+(respuestas.) Tj T*
+() Tj T*
+(Contratos REST) Tj T*
+() Tj T*
+(- /api/users: POST, GET; /api/users/{id}: GET, PUT, DELETE.) Tj T*
+(- /api/cellphones: POST, GET; /api/cellphones/{id}: GET, PUT, DELETE.) Tj T*
+(- Creacion: 201; lectura/actualizacion: 200; eliminacion: 204; validacion: 400;) Tj T*
+(inexistente: 404; conflicto de IMEI: 409.) Tj T*
+() Tj T*
+(El cuerpo del celular usa los 20 nombres academicos en espanol. Swagger documenta) Tj T*
+(esquemas, validaciones y permisos.) Tj T*
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 2661 >>
+stream
+BT
+/F1 9 Tf
+48 790 Td
+12 TL
+() Tj T*
+(Verificacion) Tj T*
+() Tj T*
+(La linea base ejecuto 194 pruebas sin fallos y construyo el artefacto original.) Tj T*
+(Durante el desarrollo se amplio la suite con pruebas de dominio, handlers, persistencia JDBC simulada,) Tj T*
+(serializacion,) Tj T*
+(validacion y autorizacion REST. mvnw.cmd test valida la suite local; la ejecucion de) Tj T*
+(MySQL real, Docker y Render requiere los servicios y credenciales correspondientes.) Tj T*
+() Tj T*
+(Ejecucion local) Tj T*
+() Tj T*
+(Defina DBUSERNAME, DBPASSWORD, MYSQLROOTPASSWORD y un JWTSECRET aleatorio en) Tj T*
+(.env, luego ejecute docker compose up --build. Postman contiene la coleccion CRUDL y) Tj T*
+(un entorno sin credenciales reales.) Tj T*
+() Tj T*
+() Tj T*
+(Guion de sustentacion Actividad 11) Tj T*
+() Tj T*
+(1. Contexto) Tj T*
+() Tj T*
+(El punto de partida fue un microservicio de usuarios con Java 17, Spring Boot, JDBC,) Tj T*
+(MySQL, JWT y BCrypt. Se preservaron sus endpoints, autenticacion y notificaciones.) Tj T*
+() Tj T*
+(2. Dominio) Tj T*
+() Tj T*
+(Celular tiene los atributos solicitados. El IMEI es una cadena de 15 digitos para) Tj T*
+(conservar ceros iniciales y su unicidad se protege tambien en la base de datos. Los) Tj T*
+(valores tecnicos invalidos se rechazan y los booleanos falsos son valores validos.) Tj T*
+() Tj T*
+(3. Hexagonal y CQRS) Tj T*
+() Tj T*
+(El controlador delega en puertos de entrada. El handler de comandos depende de puertos) Tj T*
+(de persistencia, nunca de JDBC. Las consultas tienen su propio handler y puerto de) Tj T*
+(lectura. Los adaptadores JDBC implementan esos contratos y usan sentencias parametrizadas.) Tj T*
+() Tj T*
+(4. API y seguridad) Tj T*
+() Tj T*
+(Se puede mostrar POST, GET, PUT y DELETE para /api/cellphones y comparar el CRUDL de) Tj T*
+(Usuario. ADMIN realiza cambios; ADMIN y REVIEWER consultan. El registro publico y el) Tj T*
+(login existentes se mantienen. JWT requiere un secreto aleatorio codificado en Base64;) Tj T*
+(las contrasenas de Usuario siguen usando BCrypt.) Tj T*
+() Tj T*
+(5. Datos y pruebas) Tj T*
+() Tj T*
+(Flyway agrega la tabla mediante una migracion hacia adelante, baselina el esquema previo) Tj T*
+(y evita eliminar datos. Se presentan pruebas de dominio, casos de uso y MockMvc. La) Tj T*
+(coleccion Postman muestra los flujos positivos y errores esperados.) Tj T*
+() Tj T*
+(6. Cierre) Tj T*
+() Tj T*
+(Docker Compose permite iniciar MySQL y la API con variables locales; GitHub Actions) Tj T*
+(compila, prueba y construye la imagen. Render conserva el despliegue vinculado a main;) Tj T*
+(la rama academica no se despliega a produccion automaticamente.) Tj T*
+() Tj T*
+ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000218 00000 n 
+0000000344 00000 n 
+0000003562 00000 n 
+0000003688 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+6401
+%%EOF
