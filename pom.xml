@@ -47,6 +47,16 @@
       <artifactId>spring-boot-starter-jdbc</artifactId>
     </dependency>
 
+    <!-- Versioned, non-destructive schema evolution. -->
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-mysql</artifactId>
+    </dependency>
+
     <!-- Validation: jakarta.validation-api + hibernate-validator
          En Spring Boot 3.x este starter se separó de spring-boot-starter-web -->
     <dependency>
