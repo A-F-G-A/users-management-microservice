@@ -28,7 +28,19 @@ public class JwtTokenService {
   }
 
   JwtTokenService(final JwtProperties properties, final Clock clock) {
-    this.signingKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(properties.secret()));
+    if (properties.secret() == null || properties.secret().isBlank()) {
+      throw new IllegalStateException("JWT_SECRET debe configurarse con al menos 32 bytes aleatorios codificados en Base64.");
+    }
+    final byte[] secretBytes;
+    try {
+      secretBytes = Base64.getDecoder().decode(properties.secret());
+    } catch (final IllegalArgumentException exception) {
+      throw new IllegalStateException("JWT_SECRET debe ser una cadena Base64 válida.", exception);
+    }
+    if (secretBytes.length < 32) {
+      throw new IllegalStateException("JWT_SECRET debe contener al menos 32 bytes.");
+    }
+    this.signingKey = Keys.hmacShaKeyFor(secretBytes);
     this.expirationSeconds = properties.expirationSeconds();
     this.clock = clock;
   }
