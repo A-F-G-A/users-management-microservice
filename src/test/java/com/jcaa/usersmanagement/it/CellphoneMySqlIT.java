@@ -113,16 +113,22 @@ class CellphoneMySqlIT {
   void shouldMigrateAndBootstrapExactlyOneAdmin() {
     assertThat(jdbc.queryForObject(
         "SELECT COUNT(*) FROM flyway_schema_history WHERE success = 1", Integer.class)).isEqualTo(2);
-    assertThat(jdbc.queryForObject(
-        "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'", Integer.class)).isEqualTo(1);
-    assertThat(jdbc.queryForObject(
-        "SELECT password FROM users WHERE email = ?", String.class, ADMIN_EMAIL))
-        .startsWith("$2").isNotEqualTo(ADMIN_PASSWORD);
+    // The context is shared: other tests may add ADMIN rows, so assert on the bootstrap row and
+    // on the count not changing instead of an absolute total (test-order independent).
+    final Map<String, Object> admin = jdbc.queryForMap(
+        "SELECT role, status, password FROM users WHERE email = ?", ADMIN_EMAIL);
+    assertThat(admin.get("role")).isEqualTo("ADMIN");
+    assertThat(admin.get("status")).isEqualTo("ACTIVE");
+    assertThat((String) admin.get("password")).startsWith("$2").isNotEqualTo(ADMIN_PASSWORD);
 
+    final Integer adminsBefore = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'", Integer.class);
     assertThat(bootstrapAdminService.createFirstAdminIfNoneExists(
         "Otro", "otro.admin@example.com", "another-long-password")).isFalse();
     assertThat(jdbc.queryForObject(
-        "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'", Integer.class)).isEqualTo(1);
+        "SELECT COUNT(*) FROM users WHERE role = 'ADMIN'", Integer.class)).isEqualTo(adminsBefore);
+    assertThat(jdbc.queryForObject(
+        "SELECT COUNT(*) FROM users WHERE email = 'otro.admin@example.com'", Integer.class)).isZero();
   }
 
   @Test
