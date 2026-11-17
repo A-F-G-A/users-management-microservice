@@ -8,8 +8,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.PlatformTransactionManager;
 
 @Slf4j
 @Configuration(proxyBeanMethods = false)
@@ -57,11 +55,6 @@ public class DataSourceSpringConfig {
 
     log.info(LOG_DATASOURCE_INIT, dbHost, dbPort);
     return new HikariDataSource(hikariConfig);
-  }
-
-  @Bean
-  public PlatformTransactionManager transactionManager(final DataSource dataSource) {
-    return new DataSourceTransactionManager(dataSource);
   }
 }
 

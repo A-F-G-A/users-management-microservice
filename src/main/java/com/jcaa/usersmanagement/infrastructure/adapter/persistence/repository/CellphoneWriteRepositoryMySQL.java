@@ -9,10 +9,18 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-/** JDBC write adapter. All values are bound parameters; no input is concatenated into SQL. */
+/**
+ * JDBC write adapter. All values are bound parameters; no input is concatenated into SQL.
+ *
+ * <p>UPDATE relies on MySQL Connector/J reporting matched rows (useAffectedRows=false, the
+ * default), so updating a row with identical values still returns 1 and 0 means "not found".
+ */
 @Repository
 @RequiredArgsConstructor
 public class CellphoneWriteRepositoryMySQL implements CellphoneWritePort {
+
+  /** Name of the unique constraint declared in V2__create_cellphones.sql. */
+  static final String IMEI_UNIQUE_CONSTRAINT = "uq_cellphones_imei";
 
   private static final String INSERT = """
       INSERT INTO cellphones (id, brand, imei, screen_size, megapixels, ram, primary_storage,
@@ -26,50 +34,52 @@ public class CellphoneWriteRepositoryMySQL implements CellphoneWritePort {
       bluetooth=?, cameras=?, cpu_brand=?, cpu_speed=?, nfc=?, fingerprint=?, infrared=?,
       water_resistant=?, sim_count=? WHERE id=?
       """;
+  private static final String DELETE = "DELETE FROM cellphones WHERE id = ?";
 
   private final JdbcTemplate jdbc;
 
   @Override
   public CellphoneModel save(final CellphoneModel c) {
     try {
-      jdbc.update(INSERT, values(c, true));
+      jdbc.update(INSERT, c.id(), c.brand(), c.imei(), c.screenSize(), c.megapixels(), c.ram(),
+          c.primaryStorage(), c.secondaryStorage(), c.operatingSystem(), c.operator(),
+          c.bandTechnology(), c.wifi(), c.bluetooth(), c.cameras(), c.cpuBrand(), c.cpuSpeed(),
+          c.nfc(), c.fingerprint(), c.infrared(), c.waterResistant(), c.simCount());
       return c;
     } catch (final DuplicateKeyException exception) {
-      throw CellphoneAlreadyExistsException.becauseImeiAlreadyExists(c.imei());
+      throw translateDuplicate(exception, c);
     }
   }
 
   @Override
   public CellphoneModel update(final CellphoneModel c) {
+    final int rows;
     try {
-      final Object[] values = values(c, false);
-      final Object[] params = java.util.Arrays.copyOf(values, values.length + 1);
-      params[values.length] = c.id();
-      if (jdbc.update(UPDATE, params) == 0) throw CellphoneNotFoundException.becauseIdWasNotFound(c.id());
-      return c;
+      rows = jdbc.update(UPDATE, c.brand(), c.imei(), c.screenSize(), c.megapixels(), c.ram(),
+          c.primaryStorage(), c.secondaryStorage(), c.operatingSystem(), c.operator(),
+          c.bandTechnology(), c.wifi(), c.bluetooth(), c.cameras(), c.cpuBrand(), c.cpuSpeed(),
+          c.nfc(), c.fingerprint(), c.infrared(), c.waterResistant(), c.simCount(), c.id());
     } catch (final DuplicateKeyException exception) {
-      throw CellphoneAlreadyExistsException.becauseImeiAlreadyExists(c.imei());
+      throw translateDuplicate(exception, c);
     }
+    if (rows == 0) throw CellphoneNotFoundException.becauseIdWasNotFound(c.id());
+    return c;
   }
 
   @Override
   public void delete(final String id) {
-    if (jdbc.update("DELETE FROM cellphones WHERE id = ?", id) == 0) {
+    if (jdbc.update(DELETE, id) == 0) {
       throw CellphoneNotFoundException.becauseIdWasNotFound(id);
     }
   }
 
-  private static Object[] values(final CellphoneModel c, final boolean includeId) {
-    final Object[] fields = {
-      c.brand(), c.imei(), c.screenSize(), c.megapixels(), c.ram(), c.primaryStorage(),
-      c.secondaryStorage(), c.operatingSystem(), c.operator(), c.bandTechnology(), c.wifi(),
-      c.bluetooth(), c.cameras(), c.cpuBrand(), c.cpuSpeed(), c.nfc(), c.fingerprint(),
-      c.infrared(), c.waterResistant(), c.simCount()
-    };
-    if (!includeId) return fields;
-    final Object[] withId = new Object[fields.length + 1];
-    withId[0] = c.id();
-    System.arraycopy(fields, 0, withId, 1, fields.length);
-    return withId;
+  /** Only the IMEI constraint is a domain conflict; any other duplicate (e.g. PK) is rethrown. */
+  private static RuntimeException translateDuplicate(
+      final DuplicateKeyException exception, final CellphoneModel c) {
+    final String detail = exception.getMostSpecificCause().getMessage();
+    if (detail != null && detail.contains(IMEI_UNIQUE_CONSTRAINT)) {
+      return CellphoneAlreadyExistsException.becauseImeiAlreadyExists(c.imei());
+    }
+    return exception;
   }
 }

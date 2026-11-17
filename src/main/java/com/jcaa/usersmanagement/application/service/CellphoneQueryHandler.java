@@ -8,9 +8,11 @@ import com.jcaa.usersmanagement.domain.model.CellphoneModel;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Read-side handler; it has no dependency on mutation ports. */
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class CellphoneQueryHandler implements CellphoneQueryUseCase {
 
