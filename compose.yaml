@@ -6,19 +6,20 @@ services:
       MYSQL_USER: ${DB_USERNAME:?Define DB_USERNAME en .env}
       MYSQL_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Define MYSQL_ROOT_PASSWORD en .env}
-    ports:
-      - "3306:3306"
+    # No "ports": MySQL is reachable only by the api service on the internal compose network.
+    # The schema is created by Flyway when the api starts; no SQL with users or credentials is mounted.
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
     healthcheck:
+      # A real authenticated query over TCP with the application account. mysqladmin ping would
+      # succeed during the entrypoint's temporary init server and even on "access denied".
       test:
         - CMD-SHELL
-        - mysqladmin ping --host=127.0.0.1 --user=root --password=$${MYSQL_ROOT_PASSWORD}
+        - MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP --host=127.0.0.1 --user="$${MYSQL_USER}" --database="$${MYSQL_DATABASE}" --execute="SELECT 1" --silent
       interval: 5s
       timeout: 5s
       retries: 20
-      start_period: 20s
+      start_period: 30s
     restart: unless-stopped
 
   api:
@@ -42,14 +43,19 @@ services:
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Gestion de Usuarios}
       JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env como Base64 de al menos 32 bytes}
       JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-900}
+      # Optional, first start of an empty database only (see README).
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrador}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
     ports:
-      - "8080:8080"
+      # Published on loopback only; use a reverse proxy to expose it beyond this machine.
+      - "127.0.0.1:8080:8080"
     healthcheck:
       test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 60s
     depends_on:
       mysql:
         condition: service_healthy
