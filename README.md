@@ -4,6 +4,34 @@ Aplicación de gestión de usuarios construida con Java 17 y Spring Boot. La API
 
 Spring es el único *composition root*: `Main` inicia el contexto y las dependencias se resuelven mediante configuración y component scanning de Spring.
 
+## Documentación
+
+| Documento | Propósito |
+|---|---|
+| Este `README.md` | Documentación técnica: ejecución, configuración, arquitectura, seguridad, pruebas, Docker y CI |
+| [`docs/entrega-academica/Informe-Actividad-11-Celular.pdf`](docs/entrega-academica/Informe-Actividad-11-Celular.pdf) | Informe académico de la Actividad 11 (portada, índice, desarrollo y conclusiones) |
+| [`docs/entrega-academica/Guion-Sustentacion-Actividad-11.md`](docs/entrega-academica/Guion-Sustentacion-Actividad-11.md) | Guion de sustentación y demostración |
+| [`docs/informe-fuente/`](docs/informe-fuente/) | Fuente Markdown del informe y generador del PDF (`node docs/informe-fuente/generar-informe-pdf.js`) |
+| [`postman/`](postman/) | Colección y entorno de Postman |
+
+## Arquitectura y paquetes
+
+Arquitectura Hexagonal (puertos y adaptadores) con CQRS en el módulo Celular. Paquetes bajo
+`src/main/java/com/jcaa/usersmanagement`:
+
+```text
+domain/                      Modelos, objetos de valor, enumeraciones, eventos y excepciones (sin Spring ni SQL)
+application/port/in/         Puertos de entrada (casos de uso), p. ej. CellphoneCommandUseCase, CellphoneQueryUseCase
+application/port/out/        Puertos de salida, p. ej. CellphoneWritePort, CellphoneReadPort
+application/service/         Casos de uso y handlers CQRS, comandos, consultas y mappers
+infrastructure/entrypoint/rest/        Controladores REST, DTO, mappers y GlobalExceptionHandler
+infrastructure/adapter/persistence/    Repositorios JDBC (MySQL) y mappers de filas
+infrastructure/adapter/email/          Envío de correo (JavaMail)
+infrastructure/security/               JWT, filtro de autenticación y reglas de acceso
+infrastructure/config/                 DataSource, OpenAPI, ejecución asíncrona y administrador inicial
+infrastructure/entrypoint/desktop/     Antigua CLI (inactiva)
+```
+
 ## Verificación
 
 `GET /health` es público y responde HTTP 200 con los metadatos generados desde
@@ -138,7 +166,13 @@ fijadas por SHA de commit y `persist-credentials: false`. Ejecuta `bash ./mvnw c
 imagen Docker.
 
 La API documenta los permisos mediante OpenAPI (versión tomada de `build-info`); Swagger UI
-está en `/swagger-ui.html`. La explicación académica y el guion de sustentación están en `docs/`.
+está en `/swagger-ui.html`. El informe académico y el guion de sustentación están en
+`docs/entrega-academica/`.
+
+Estado verificado de CI: en la ejecución 43994351552 (commit `253cee8`) pasaron las 297
+pruebas unitarias y se ejecutaron las 15 de integración con MySQL 8.4; 14 aprobaron y 1
+falló por un problema de aislamiento de la propia prueba, corregido en `1e9ca7d`. Esa
+corrección aún no tiene una ejecución de CI que la confirme.
 
 ## Despliegue en Render
 
