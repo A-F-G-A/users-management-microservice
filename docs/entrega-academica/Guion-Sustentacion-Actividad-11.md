@@ -58,8 +58,12 @@ fija una duración.
 ## 5. Persistencia y pruebas
 
 - `JdbcTemplate` con parámetros enlazados; Flyway V1 (`users`) y V2 (`cellphones` con `uq_cellphones_imei`).
-- **Pruebas unitarias y de API:** 297 aprobadas (dominio 162, aplicación 45, adaptadores 36, REST 50, JWT 4).
-- **Integración:** 15 pruebas con Testcontainers y MySQL 8.4. En GitHub Actions se ejecutaron: 14 aprobaron y 1 falló por un problema de aislamiento de la propia prueba, ya corregido en el commit `1e9ca7d`. Antes de la sustentación, confirmar el resultado de la nueva ejecución y actualizar esta frase.
+- **Pruebas unitarias y MockMvc (Surefire):** 297 aprobadas, 0 fallidas, 0 omitidas (dominio 162, aplicación 45, adaptadores 36, REST 50, JWT 4).
+- **Pruebas de integración (Failsafe):** 15 aprobadas, ninguna omitida, contra MySQL 8.4 real levantado con Testcontainers.
+  - `CellphoneMySqlIT` (12): CRUDL completo REST → dominio → SQL → REST, IMEI duplicado (409), id inexistente (404), rollback transaccional, permisos con JWT reales, registro con `role=ADMIN` y revocación de un ADMIN desactivado.
+  - `FlywayMigrationIT` (3): las migraciones V1 y V2 se aplican en una base nueva y sobre un esquema previo sin Flyway.
+- **Qué decir:** no se usan H2 ni mocks de JDBC; se prueba el SQL y las migraciones que corren en producción. Una ejecución anterior tuvo 1 falla por aislamiento de datos de la propia prueba, corregida en `1e9ca7d`.
+- **Evidencia:** GitHub Actions, ejecución 43998749837 (commit `8a12d5d`), resultado SUCCESS: pruebas, `docker compose config`, imagen Docker y `users-management-2.2.0.jar`. <https://github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837>
 
 ## 6. Demostración
 
@@ -99,7 +103,7 @@ fija una duración.
 - **¿Por qué no hay dos bases para CQRS?** No se requiere para este volumen; la separación está en contratos, handlers y transacciones, y podría evolucionar sin cambiar el dominio.
 - **¿Qué pasa si dos peticiones crean el mismo IMEI a la vez?** La restricción única de MySQL lo impide y el adaptador lo traduce a 409.
 - **¿Cómo se crea un administrador adicional?** Un ADMIN promueve a un usuario registrado con `PUT /api/users/{id}`.
-- **¿Qué no se verificó?** El despliegue en Render y, al momento de escribir este guion, la ejecución de las 15 pruebas de integración tras la corrección.
+- **¿Qué no se verificó?** El despliegue en Render. Las pruebas de integración no se ejecutan en el equipo de desarrollo (sin Docker); su evidencia es el pipeline de GitHub Actions.
 
 ## 9. Cierre
 

@@ -169,10 +169,11 @@ La API documenta los permisos mediante OpenAPI (versión tomada de `build-info`)
 está en `/swagger-ui.html`. El informe académico y el guion de sustentación están en
 `docs/entrega-academica/`.
 
-Estado verificado de CI: en la ejecución 43994351552 (commit `253cee8`) pasaron las 297
-pruebas unitarias y se ejecutaron las 15 de integración con MySQL 8.4; 14 aprobaron y 1
-falló por un problema de aislamiento de la propia prueba, corregido en `1e9ca7d`. Esa
-corrección aún no tiene una ejecución de CI que la confirme.
+Estado verificado de CI: la [ejecución 43998749837](https://github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837)
+(commit `8a12d5d`) terminó en **SUCCESS**: 297 pruebas unitarias y MockMvc aprobadas y 15
+de integración aprobadas con MySQL 8.4 (12 `CellphoneMySqlIT` y 3 `FlywayMigrationIT`),
+ninguna omitida; además, `docker compose config`, la imagen Docker y el JAR
+`users-management-2.2.0.jar` fueron correctos.
 
 ## Despliegue en Render
 

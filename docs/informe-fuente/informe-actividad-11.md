@@ -203,8 +203,9 @@ genérico sin exponer SQL.
 
 ## 9.2 Pruebas unitarias y de API
 
-Resultado de `mvnw.cmd clean verify` en el equipo de desarrollo, confirmado también por
-GitHub Actions: 297 pruebas ejecutadas, 0 fallidas y 0 omitidas.
+Son las pruebas unitarias (Surefire), que incluyen las de API con MockMvc. Resultado de
+`mvnw.cmd clean verify` en el equipo de desarrollo, confirmado por GitHub Actions en la
+ejecución 43998749837 (commit `8a12d5d`): 297 pruebas ejecutadas, 0 fallidas y 0 omitidas.
 
 | Área | Pruebas |
 |---|---|
@@ -218,16 +219,27 @@ GitHub Actions: 297 pruebas ejecutadas, 0 fallidas y 0 omitidas.
 ## 9.3 Pruebas de integración con MySQL
 
 Se definieron 15 pruebas de integración (12 en `CellphoneMySqlIT` y 3 en
-`FlywayMigrationIT`). Cubren migraciones en base nueva y en esquema previo, el CRUDL
+`FlywayMigrationIT`), ejecutadas con Failsafe contra MySQL 8.4 mediante Testcontainers y con
+Flyway habilitado. Cubren migraciones en base nueva y en esquema previo, el CRUDL
 completo REST → dominio → SQL → dominio → REST, IMEI duplicado al crear y actualizar,
 identificadores inexistentes, rollback transaccional, permisos con JWT reales, registro con
 `role=ADMIN` y la revocación de un ADMIN desactivado.
 
-En el equipo de desarrollo no había Docker, por lo que se informaron como omitidas. En
-GitHub Actions (ejecución 43994351552, commit `253cee8`) se ejecutaron las 15: 14
-aprobaron y 1 falló. La falla se debía a la prueba, no a la aplicación: esperaba un único
-ADMIN en una base compartida en la que otra prueba ya había insertado otro. Se corrigió en
-el commit `1e9ca7d`; su resultado queda pendiente de una nueva ejecución del pipeline.
+| Clase | Pruebas | Resultado en GitHub Actions |
+|---|---|---|
+| `CellphoneMySqlIT` | 12 | 12 aprobadas |
+| `FlywayMigrationIT` | 3 | 3 aprobadas |
+| Total | 15 | 15 aprobadas, 0 fallidas, 0 omitidas |
+
+En el equipo de desarrollo no había Docker, por lo que allí se informaron como omitidas; en
+GitHub Actions `IT_REQUIRE_MYSQL=true` impide omitirlas. En una ejecución anterior
+(43994351552, commit `253cee8`) 14 aprobaron y 1 falló por un problema de la propia prueba:
+esperaba un único ADMIN en una base compartida en la que otra prueba ya había insertado
+otro. Tras la corrección del commit `1e9ca7d`, la ejecución 43998749837 (commit `8a12d5d`)
+aprobó las 15.
+
+Evidencia (pipeline de GitHub Actions):
+github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837
 
 # 10. Resultados
 
@@ -235,14 +247,18 @@ el commit `1e9ca7d`; su resultado queda pendiente de una nueva ejecución del pi
 |---|---|
 | CRUDL de celulares | Implementado con los cinco endpoints y control por rol |
 | Validaciones | 21 atributos validados en el dominio, incluido Luhn para el IMEI |
-| Pruebas unitarias y de API | 297 aprobadas, 0 fallidas, 0 omitidas |
-| Pruebas de integración MySQL | 14 de 15 aprobadas en CI; corrección de la restante pendiente de confirmar |
-| Empaquetado | `users-management-2.2.0.jar` generado con `mvnw.cmd clean verify` |
+| Pruebas unitarias y MockMvc | 297 aprobadas, 0 fallidas, 0 omitidas |
+| Pruebas de integración | 15 aprobadas (12 `CellphoneMySqlIT`, 3 `FlywayMigrationIT`), ninguna omitida |
+| MySQL 8.4 con Testcontainers | Correcto en GitHub Actions |
+| Migraciones Flyway | Correctas |
+| Docker | `docker compose config` y construcción de la imagen correctas |
+| Empaquetado | `users-management-2.2.0.jar` generado |
+| Pipeline de GitHub Actions | SUCCESS, ejecución 43998749837 (commit `8a12d5d`) |
 | Despliegue en Render | No verificado en esta actividad |
 
 # 11. Limitaciones y trabajo pendiente
 
-- Confirmar en GitHub Actions las 15 pruebas de integración tras la corrección del commit `1e9ca7d`.
+- Las pruebas de integración requieren Docker o un MySQL desechable; en el equipo de desarrollo, sin Docker, se omiten y su verificación depende de GitHub Actions.
 - El despliegue en Render no se verificó; `render.yaml` despliega solo la rama `main`.
 - Si una base existente conserva el antiguo usuario `admin@example.com`, cuyo hash estuvo publicado en el repositorio, debe cambiarse su contraseña o desactivarse.
 - No se implementó un flujo de recuperación de contraseña por correo.

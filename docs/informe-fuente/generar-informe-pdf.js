@@ -340,7 +340,7 @@ function renderCover() {
     y -= 24;
   }
   drawRuns(plain('Contenido elaborado a partir del código y de las pruebas del repositorio; los resultados'), MARGIN_X, BOTTOM + 14, 8.5, MUTED);
-  drawRuns(plain('no confirmados se identifican como pendientes en las secciones 9, 10 y 11.'), MARGIN_X, BOTTOM + 3, 8.5, MUTED);
+  drawRuns(plain('de las secciones 9 y 10 se verificaron en GitHub Actions (ejecución 43998749837).'), MARGIN_X, BOTTOM + 3, 8.5, MUTED);
 }
 
 function renderHeading(block) {
