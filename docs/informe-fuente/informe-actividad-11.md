@@ -238,8 +238,7 @@ esperaba un único ADMIN en una base compartida en la que otra prueba ya había 
 otro. Tras la corrección del commit `1e9ca7d`, la ejecución 43998749837 (commit `8a12d5d`)
 aprobó las 15.
 
-Evidencia (pipeline de GitHub Actions):
-github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837
+Evidencia: [pipeline de GitHub Actions, ejecución 43998749837](https://github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837).
 
 # 10. Resultados
 
@@ -255,6 +254,8 @@ github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837
 | Empaquetado | `users-management-2.2.0.jar` generado |
 | Pipeline de GitHub Actions | SUCCESS, ejecución 43998749837 (commit `8a12d5d`) |
 | Despliegue en Render | No verificado en esta actividad |
+
+<!-- salto-de-pagina -->
 
 # 11. Limitaciones y trabajo pendiente
 

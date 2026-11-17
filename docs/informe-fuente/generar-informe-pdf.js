@@ -38,7 +38,8 @@ const COVER = {
     ['Repositorio', 'github.com/A-F-G-A/users-management-microservice'],
     ['Rama', 'feature/actividad-11-celular-ddd-cqrs'],
     ['Versión del código', CODE_COMMIT ? `commit ${CODE_COMMIT}` : 'no disponible'],
-    ['Fecha de generación', new Date().toISOString().slice(0, 10)],
+    // Fecha local de Colombia; toISOString() usa UTC y adelanta un día por la noche.
+    ['Fecha de generación', new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date())],
   ],
 };
 const FOOTER = 'Informe técnico · Actividad 11: CRUDL de Celular';
@@ -189,15 +190,18 @@ function utf16Hex(text) {
   return `<${units.map((u) => u.toString(16).padStart(4, '0')).join('')}>`;
 }
 
-// ── Markdown en línea: `código` y **negrita** ──────────────────────────────
+// ── Markdown en línea: `código`, **negrita** y [enlace](https://…) ─────────
+const LINK_COLOR = '0.05 0.33 0.75';
 function parseInline(text, baseFont = 'F1') {
   const runs = [];
-  const pattern = /(`[^`]+`|\*\*[^*]+\*\*)/g;
+  const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)\s]+\))/g;
   let last = 0;
   for (const match of text.matchAll(pattern)) {
     if (match.index > last) runs.push({ text: text.slice(last, match.index), font: baseFont });
     const token = match[0];
-    runs.push(token.startsWith('`') ? { text: token.slice(1, -1), font: 'F3' } : { text: token.slice(2, -2), font: 'F2' });
+    const link = /^\[([^\]]+)\]\((.+)\)$/.exec(token);
+    if (link) runs.push({ text: link[1], font: baseFont, link: link[2] });
+    else runs.push(token.startsWith('`') ? { text: token.slice(1, -1), font: 'F3' } : { text: token.slice(2, -2), font: 'F2' });
     last = match.index + token.length;
   }
   if (last < text.length) runs.push({ text: text.slice(last), font: baseFont });
@@ -209,7 +213,7 @@ function wrapRuns(runs, width, size) {
   for (const run of runs) {
     for (const part of run.text.split(/(\s+)/)) {
       if (!part) continue;
-      words.push(/^\s+$/.test(part) ? { space: true } : { text: part, font: run.font });
+      words.push(/^\s+$/.test(part) ? { space: true } : { text: part, font: run.font, link: run.link });
     }
   }
   const lines = [];
@@ -228,7 +232,12 @@ function wrapRuns(runs, width, size) {
         lineWidth = 0;
         pendingSpace = false;
       }
-      if (pendingSpace && line.length) { line.push({ text: ' ', font: 'F1' }); lineWidth += spaceWidth; }
+      if (pendingSpace && line.length) {
+        // The space inside a link belongs to it, so the underline and click area stay continuous.
+        const link = piece.link && piece.link === line[line.length - 1].link ? piece.link : undefined;
+        line.push({ text: ' ', font: 'F1', link });
+        lineWidth += spaceWidth;
+      }
       line.push(piece);
       lineWidth += w;
       pendingSpace = false;
@@ -243,10 +252,10 @@ function splitLongWord(word, width, size) {
   const pieces = [];
   let current = '';
   for (const ch of word.text) {
-    if (current && textWidth(current + ch, word.font, size) > width) { pieces.push({ text: current, font: word.font }); current = ''; }
+    if (current && textWidth(current + ch, word.font, size) > width) { pieces.push({ ...word, text: current }); current = ''; }
     current += ch;
   }
-  if (current) pieces.push({ text: current, font: word.font });
+  if (current) pieces.push({ ...word, text: current });
   return pieces;
 }
 
@@ -259,6 +268,8 @@ function parseMarkdown(source) {
   while (i < lines.length) {
     const line = lines[i];
     if (!line.trim()) { i += 1; continue; }
+    // Comentario invisible en GitHub que fuerza un salto de página en el PDF.
+    if (line.trim() === '<!-- salto-de-pagina -->') { blocks.push({ type: 'break' }); i += 1; continue; }
     if (line.startsWith('```')) {
       const code = [];
       i += 1;
@@ -315,8 +326,13 @@ function drawRuns(runs, x, baseline, size, color = INK) {
   let cursor = x;
   for (const run of runs) {
     if (!run.text) continue;
-    page.ops.push(`BT /${run.font} ${size} Tf ${color} rg 1 0 0 1 ${cursor.toFixed(2)} ${baseline.toFixed(2)} Tm ${encodeText(run.text, run.font)} Tj ET`);
-    cursor += textWidth(run.text, run.font, size);
+    const width = textWidth(run.text, run.font, size);
+    page.ops.push(`BT /${run.font} ${size} Tf ${run.link ? LINK_COLOR : color} rg 1 0 0 1 ${cursor.toFixed(2)} ${baseline.toFixed(2)} Tm ${encodeText(run.text, run.font)} Tj ET`);
+    if (run.link) {
+      page.ops.push(`${LINK_COLOR} RG 0.5 w ${cursor.toFixed(2)} ${(baseline - 1.5).toFixed(2)} m ${(cursor + width).toFixed(2)} ${(baseline - 1.5).toFixed(2)} l S`);
+      page.annots.push({ rect: [cursor, baseline - 3, cursor + width, baseline + size], uri: run.link });
+    }
+    cursor += width;
   }
   return cursor;
 }
@@ -466,6 +482,7 @@ function layout(blocks, tocPageCount) {
     else if (block.type === 'item') renderParagraph(block.text, 18, block.marker);
     else if (block.type === 'table') renderTable(block.rows);
     else if (block.type === 'code') renderCode(block.lines);
+    else if (block.type === 'break') newPage();
   }
   return tocStart;
 }
@@ -560,7 +577,7 @@ const pageIds = pages.map(() => reserve());
 const dest = (entry) => `[${pageIds[entry.page]} 0 R /XYZ ${MARGIN_X - 10} ${entry.top.toFixed(2)} 0]`;
 pages.forEach((p, index) => {
   const contentId = add(stream('<<', p.ops.join('\n')));
-  const annots = p.annots.map((a) => add(`<< /Type /Annot /Subtype /Link /Rect [${a.rect.map((v) => v.toFixed(2)).join(' ')}] /Border [0 0 0] /Dest ${dest(a.target)} >>`));
+  const annots = p.annots.map((a) => add(`<< /Type /Annot /Subtype /Link /Rect [${a.rect.map((v) => v.toFixed(2)).join(' ')}] /Border [0 0 0] ${a.uri ? `/A << /Type /Action /S /URI /URI (${a.uri}) >>` : `/Dest ${dest(a.target)}`} >>`));
   const annotsEntry = annots.length ? ` /Annots [${annots.map((id) => `${id} 0 R`).join(' ')}]` : '';
   set(pageIds[index], `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] /Resources << /Font << ${fontResources} >> >> /Contents ${contentId} 0 R${annotsEntry} >>`);
 });
