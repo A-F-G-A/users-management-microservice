@@ -11,8 +11,8 @@ class CellphoneModelTest {
 
   @Test
   void shouldKeepFalseCapabilitiesAndLeadingZeroImei() {
-    final CellphoneModel cellphone = validCellphone("012345678901234");
-    assertThat(cellphone.imei()).isEqualTo("012345678901234");
+    final CellphoneModel cellphone = validCellphone("012345678901237");
+    assertThat(cellphone.imei()).isEqualTo("012345678901237");
     assertThat(cellphone.wifi()).isFalse();
     assertThat(cellphone.bluetooth()).isFalse();
   }
@@ -24,7 +24,7 @@ class CellphoneModelTest {
 
   @Test
   void shouldRejectNegativeTechnicalValues() {
-    assertThrows(DomainException.class, () -> new CellphoneModel("id", "brand", "012345678901234",
+    assertThrows(DomainException.class, () -> new CellphoneModel("id", "brand", "012345678901237",
         BigDecimal.valueOf(-1), BigDecimal.ZERO, 4, 64, null, "OS", "operator", "5G", true,
         true, 2, "CPU", BigDecimal.ONE, false, false, false, false, 1));
   }

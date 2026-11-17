@@ -16,7 +16,7 @@ class CellphonePersistenceMapperTest {
     final ResultSet row = mock(ResultSet.class);
     when(row.getString("id")).thenReturn("cell-1");
     when(row.getString("brand")).thenReturn("Acme");
-    when(row.getString("imei")).thenReturn("012345678901234");
+    when(row.getString("imei")).thenReturn("012345678901237");
     when(row.getBigDecimal("screen_size")).thenReturn(BigDecimal.valueOf(6.2));
     when(row.getBigDecimal("megapixels")).thenReturn(BigDecimal.valueOf(48));
     when(row.getObject("ram")).thenReturn(8);
@@ -38,7 +38,7 @@ class CellphonePersistenceMapperTest {
 
     final CellphoneModel mapped = CellphonePersistenceMapper.fromResultSet(row);
 
-    assertThat(mapped.imei()).isEqualTo("012345678901234");
+    assertThat(mapped.imei()).isEqualTo("012345678901237");
     assertThat(mapped.secondaryStorage()).isNull();
     assertThat(mapped.wifi()).isFalse();
     assertThat(mapped.bluetooth()).isFalse();

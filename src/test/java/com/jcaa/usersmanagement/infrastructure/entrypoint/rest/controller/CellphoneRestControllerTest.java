@@ -84,7 +84,7 @@ class CellphoneRestControllerTest {
         .content(validRequest()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.marca").value("Acme"))
-        .andExpect(jsonPath("$.imei").value("012345678901234"))
+        .andExpect(jsonPath("$.imei").value("012345678901237"))
         .andExpect(jsonPath("$.wifi").value(false));
   }
 
@@ -92,7 +92,7 @@ class CellphoneRestControllerTest {
   @WithMockUser(roles = "ADMIN")
   void shouldRejectInvalidImei() throws Exception {
     mockMvc.perform(post("/api/cellphones").contentType(MediaType.APPLICATION_JSON)
-        .content(validRequest().replace("012345678901234", "123")))
+        .content(validRequest().replace("012345678901237", "123")))
         .andExpect(status().isBadRequest());
   }
 
@@ -124,7 +124,7 @@ class CellphoneRestControllerTest {
 
   private static String validRequest() {
     return """
-        {"marca":"Acme","imei":"012345678901234","pulgadas":6.2,"megapixeles":48,
+        {"marca":"Acme","imei":"012345678901237","pulgadas":6.2,"megapixeles":48,
         "ram":8,"almacenamientoPrincipal":128,"almacenamientoSecundario":null,
         "sistemaOperativo":"Android","operador":"Carrier","tecnologiaBanda":"5G",
         "wifi":false,"bluetooth":false,"camaras":3,"marcaCpu":"Acme CPU",
@@ -134,7 +134,7 @@ class CellphoneRestControllerTest {
   }
 
   private static CellphoneModel cellphone() {
-    return new CellphoneModel("cell-1", "Acme", "012345678901234", BigDecimal.valueOf(6.2),
+    return new CellphoneModel("cell-1", "Acme", "012345678901237", BigDecimal.valueOf(6.2),
         BigDecimal.valueOf(48), 8, 128, null, "Android", "Carrier", "5G", false, false,
         3, "Acme CPU", BigDecimal.valueOf(2.4), false, false, false, false, 2);
   }

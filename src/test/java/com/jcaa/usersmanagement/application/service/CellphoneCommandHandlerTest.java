@@ -36,7 +36,7 @@ class CellphoneCommandHandlerTest {
     when(writePort.save(org.mockito.ArgumentMatchers.any())).thenAnswer(call -> call.getArgument(0));
     final CellphoneModel created = handler.create(command());
     assertThat(created.id()).isNotBlank();
-    assertThat(created.imei()).isEqualTo("012345678901234");
+    assertThat(created.imei()).isEqualTo("012345678901237");
     verify(writePort).save(created);
   }
 
@@ -44,7 +44,7 @@ class CellphoneCommandHandlerTest {
   void shouldRequireExistingCellphoneOnUpdate() {
     when(readPort.getById("missing")).thenReturn(Optional.empty());
     assertThrows(CellphoneNotFoundException.class, () -> handler.update(new UpdateCellphoneCommand(
-        "missing", "Acme", "012345678901234", BigDecimal.valueOf(6.2), BigDecimal.TEN, 8,
+        "missing", "Acme", "012345678901237", BigDecimal.valueOf(6.2), BigDecimal.TEN, 8,
         128, null, "Android", "Carrier", "5G", false, false, 2, "CPU", BigDecimal.ONE,
         false, false, false, false, 1)));
   }
@@ -57,7 +57,7 @@ class CellphoneCommandHandlerTest {
   }
 
   private static CreateCellphoneCommand command() {
-    return new CreateCellphoneCommand("Acme", "012345678901234", BigDecimal.valueOf(6.2),
+    return new CreateCellphoneCommand("Acme", "012345678901237", BigDecimal.valueOf(6.2),
         BigDecimal.TEN, 8, 128, null, "Android", "Carrier", "5G", false, false, 2, "CPU",
         BigDecimal.ONE, false, false, false, false, 1);
   }

@@ -38,7 +38,7 @@ class CellphoneWriteRepositoryMySQLTest {
   }
 
   private static CellphoneModel validCellphone() {
-    return new CellphoneModel("cell-1", "Acme", "012345678901234", BigDecimal.valueOf(6.2),
+    return new CellphoneModel("cell-1", "Acme", "012345678901237", BigDecimal.valueOf(6.2),
         BigDecimal.valueOf(48), 8, 128, null, "Android", "Carrier", "5G", false, false,
         2, "Acme CPU", BigDecimal.valueOf(2.4), false, false, false, false, 2);
   }
