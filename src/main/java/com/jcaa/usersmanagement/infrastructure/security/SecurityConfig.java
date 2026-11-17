@@ -43,6 +43,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(
             authorization ->
                 authorization
+                    .requestMatchers("/error")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/health")
                     .permitAll()
                     .requestMatchers(AUTH_LOGIN_PATH)
