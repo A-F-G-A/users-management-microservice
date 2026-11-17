@@ -42,3 +42,5 @@ build/
 
 /spec/
 .env
+docs/entrega-academica/
+docs/informe-fuente/
