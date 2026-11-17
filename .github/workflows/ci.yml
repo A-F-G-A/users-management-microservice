@@ -1,0 +1,45 @@
+name: Java CI
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+
+# Least privilege: the job only reads the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Fail (instead of skipping) the MySQL/Flyway integration tests if Docker is unavailable.
+      IT_REQUIRE_MYSQL: 'true'
+    steps:
+      # Third-party actions are pinned to full commit SHAs (tag shown in the comment).
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Java 17 and Maven cache
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Unit tests, MySQL 8.4 integration tests (Testcontainers + Flyway) and package
+        run: bash ./mvnw --batch-mode --no-transfer-progress clean verify
+      - name: Validate Docker Compose file
+        env:
+          DB_USERNAME: ci_user
+          DB_PASSWORD: ci-only-placeholder
+          MYSQL_ROOT_PASSWORD: ci-only-placeholder
+          JWT_SECRET: Y2ktb25seS1wbGFjZWhvbGRlci1ub3QtYS1yZWFsLXNlY3JldC0zMmI=
+        run: docker compose --file compose.yaml config --quiet
+      - name: Build Docker image
+        run: docker build --tag users-management:${{ github.sha }} .

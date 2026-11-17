@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.infrastructure.security.JwtAuthenticationFilter;
 import com.jcaa.usersmanagement.infrastructure.security.JwtTokenService;
 import com.jcaa.usersmanagement.infrastructure.security.RestAccessDeniedHandler;
@@ -22,7 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = HealthRestController.class,
     properties = "spring.main.web-application-type=servlet")
-@MockBean(JwtTokenService.class)
+@MockBean({JwtTokenService.class, GetUserByIdPort.class})
 @Import({SecurityConfig.class, JwtAuthenticationFilter.class,
     RestAuthenticationEntryPoint.class, RestAccessDeniedHandler.class,
     ProjectInfoAutoConfiguration.class})

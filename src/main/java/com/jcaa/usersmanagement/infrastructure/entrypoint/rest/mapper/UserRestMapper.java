@@ -4,6 +4,7 @@ import com.jcaa.usersmanagement.application.service.dto.command.CreateUserComman
 import com.jcaa.usersmanagement.application.service.dto.command.DeleteUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.command.UpdateUserCommand;
 import com.jcaa.usersmanagement.application.service.dto.query.GetUserByIdQuery;
+import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.domain.model.UserModel;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.CreateUserRestRequest;
 import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.request.UpdateUserRestRequest;
@@ -11,17 +12,21 @@ import com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response.User
 import lombok.experimental.UtilityClass;
 
 import java.util.List;
+import java.util.UUID;
 
 @UtilityClass
 public class UserRestMapper {
 
+  // Self-registration can never choose privileges; admins promote users via PUT /api/users/{id}.
+  private static final UserRole PUBLIC_REGISTRATION_ROLE = UserRole.MEMBER;
+
   public CreateUserCommand toCreateCommand(final CreateUserRestRequest request) {
     return new CreateUserCommand(
-        request.id(),
+        UUID.randomUUID().toString(),
         request.name(),
         request.email(),
         request.password(),
-        request.role());
+        PUBLIC_REGISTRATION_ROLE.name());
   }
 
   public UpdateUserCommand toUpdateCommand(final String id, final UpdateUserRestRequest request) {

@@ -1,6 +1,8 @@
 package com.jcaa.usersmanagement.infrastructure.adapter.persistence.repository;
 
 import com.jcaa.usersmanagement.application.port.out.DeleteUserPort;
+import com.jcaa.usersmanagement.application.port.out.ExistsUserByRolePort;
+import com.jcaa.usersmanagement.domain.enums.UserRole;
 import com.jcaa.usersmanagement.application.port.out.GetAllUsersPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByEmailPort;
 import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
@@ -34,7 +36,10 @@ public class UserRepositoryMySQL
         GetUserByIdPort,
         GetUserByEmailPort,
         GetAllUsersPort,
-        DeleteUserPort {
+        DeleteUserPort,
+        ExistsUserByRolePort {
+
+  private static final String SQL_EXISTS_BY_ROLE = "SELECT 1 FROM users WHERE role = ? LIMIT 1";
 
   private static final String SQL_INSERT =
       "INSERT INTO users "
@@ -116,6 +121,19 @@ public class UserRepositoryMySQL
          final PreparedStatement statement = connection.prepareStatement(SQL_SELECT_ALL)) {
       final ResultSet resultSet = statement.executeQuery();
       return UserPersistenceMapper.fromResultSetToModelList(resultSet);
+    } catch (final SQLException exception) {
+      throw PersistenceException.becauseFindAllFailed(exception);
+    }
+  }
+
+  @Override
+  public boolean existsByRole(final UserRole role) {
+    try (final Connection connection = dataSource.getConnection();
+         final PreparedStatement statement = connection.prepareStatement(SQL_EXISTS_BY_ROLE)) {
+      statement.setString(1, role.name());
+      try (final ResultSet resultSet = statement.executeQuery()) {
+        return resultSet.next();
+      }
     } catch (final SQLException exception) {
       throw PersistenceException.becauseFindAllFailed(exception);
     }

@@ -72,6 +72,15 @@ class JwtTokenServiceTest {
     assertThat(exception).isNotNull();
   }
 
+  @Test
+  void shouldRejectMissingOrWeakSecretAtStartup() {
+    assertThrows(IllegalStateException.class,
+        () -> new JwtTokenService(new JwtProperties("", EXPIRATION_SECONDS)));
+    final String weakSecret = Base64.getEncoder().encodeToString("short".getBytes());
+    assertThrows(IllegalStateException.class,
+        () -> new JwtTokenService(new JwtProperties(weakSecret, EXPIRATION_SECONDS)));
+  }
+
   private static JwtTokenService serviceAt(final Instant instant) {
     return new JwtTokenService(
         new JwtProperties(SECRET, EXPIRATION_SECONDS), Clock.fixed(instant, ZoneOffset.UTC));

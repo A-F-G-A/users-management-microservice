@@ -1,7 +1,9 @@
 package com.jcaa.usersmanagement.infrastructure.entrypoint.rest.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +27,7 @@ import com.jcaa.usersmanagement.domain.valueobject.UserEmail;
 import com.jcaa.usersmanagement.domain.valueobject.UserId;
 import com.jcaa.usersmanagement.domain.valueobject.UserName;
 import com.jcaa.usersmanagement.domain.valueobject.UserPassword;
+import com.jcaa.usersmanagement.application.port.out.GetUserByIdPort;
 import com.jcaa.usersmanagement.infrastructure.security.JwtAuthenticationFilter;
 import com.jcaa.usersmanagement.infrastructure.security.JwtPrincipal;
 import com.jcaa.usersmanagement.infrastructure.security.JwtTokenService;
@@ -32,6 +35,9 @@ import com.jcaa.usersmanagement.infrastructure.security.RestAccessDeniedHandler;
 import com.jcaa.usersmanagement.infrastructure.security.RestAuthenticationEntryPoint;
 import com.jcaa.usersmanagement.infrastructure.security.SecurityConfig;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +70,7 @@ class UserRestControllerTest {
   @MockBean private GetUserByIdUseCase getUserByIdUseCase;
   @MockBean private GetAllUsersUseCase getAllUsersUseCase;
   @MockBean private JwtTokenService jwtTokenService;
+  @MockBean private GetUserByIdPort getUserByIdPort;
 
   @Test
   @DisplayName("GET /api/users debe retornar todos los usuarios")
@@ -78,6 +85,7 @@ class UserRestControllerTest {
             UserStatus.ACTIVE);
     when(getAllUsersUseCase.execute()).thenReturn(List.of(user));
     when(jwtTokenService.parse("valid-token")).thenReturn(new JwtPrincipal(ID, UserRole.REVIEWER));
+    when(getUserByIdPort.getById(new UserId(ID))).thenReturn(Optional.of(storedUser(UserRole.REVIEWER, UserStatus.ACTIVE)));
 
     mockMvc
         .perform(get("/api/users").header("Authorization", "Bearer valid-token"))
@@ -90,7 +98,7 @@ class UserRestControllerTest {
   }
 
   @Test
-  @DisplayName("POST /api/users debe crear un usuario válido")
+  @DisplayName("POST /api/users ignora id y role=ADMIN enviados por el cliente y asigna MEMBER")
   void shouldCreateUserThroughSpringMvc() throws Exception {
     final String request =
         """
@@ -108,16 +116,53 @@ class UserRestControllerTest {
             new UserName("Ada Lovelace"),
             new UserEmail("ada@example.com"),
             UserPassword.fromHash("$2a$12$abcdefghijklmnopqrstuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"),
-            UserRole.ADMIN,
-            UserStatus.ACTIVE);
-    when(createUserUseCase.execute(
-            new CreateUserCommand(ID, "Ada Lovelace", "ada@example.com", "Secure123!", "ADMIN")))
-        .thenReturn(user);
+            UserRole.MEMBER,
+            UserStatus.PENDING);
+    final ArgumentCaptor<CreateUserCommand> captor =
+        ArgumentCaptor.forClass(CreateUserCommand.class);
+    when(createUserUseCase.execute(captor.capture())).thenReturn(user);
 
     mockMvc
         .perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(request))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.id").value(ID));
+        .andExpect(jsonPath("$.role").value("MEMBER"));
+
+    final CreateUserCommand command = captor.getValue();
+    assertThat(command.role()).isEqualTo("MEMBER");
+    assertThat(command.id()).isNotEqualTo(ID);
+    assertThat(UUID.fromString(command.id())).isNotNull();
+    assertThat(command.email()).isEqualTo("ada@example.com");
+  }
+
+  @Test
+  @DisplayName("POST /api/users con role=ADMIN nunca crea administradores")
+  void shouldNeverForwardAdminRoleFromPublicRegistration() throws Exception {
+    final ArgumentCaptor<CreateUserCommand> captor =
+        ArgumentCaptor.forClass(CreateUserCommand.class);
+    when(createUserUseCase.execute(captor.capture()))
+        .thenReturn(
+            new UserModel(
+                new UserId(ID),
+                new UserName("Mallory"),
+                new UserEmail("mallory@example.com"),
+                UserPassword.fromHash("$2a$12$abcdefghijklmnopqrstuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"),
+                UserRole.MEMBER,
+                UserStatus.PENDING));
+
+    for (final String role : List.of("ADMIN", "admin", "REVIEWER")) {
+      mockMvc
+          .perform(
+              post("/api/users")
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(
+                      """
+                      {"name":"Mallory","email":"mallory@example.com",
+                       "password":"Secure123!","role":"%s","status":"ACTIVE"}
+                      """
+                          .formatted(role)))
+          .andExpect(status().isCreated());
+    }
+    assertThat(captor.getAllValues()).extracting(CreateUserCommand::role).containsOnly("MEMBER");
   }
 
   @Test
@@ -238,5 +283,62 @@ class UserRestControllerTest {
         .perform(get("/api/users/{id}", ID))
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.status").value(403));
+  }
+
+  @Test
+  @DisplayName("Un token válido de un usuario desactivado ya no autentica (401)")
+  void shouldRejectTokenOfDeactivatedUser() throws Exception {
+    when(jwtTokenService.parse("old-token")).thenReturn(new JwtPrincipal(ID, UserRole.ADMIN));
+    when(getUserByIdPort.getById(new UserId(ID)))
+        .thenReturn(Optional.of(storedUser(UserRole.ADMIN, UserStatus.INACTIVE)));
+
+    mockMvc
+        .perform(delete("/api/users/{id}", ID).header("Authorization", "Bearer old-token"))
+        .andExpect(status().isUnauthorized());
+    verifyNoInteractions(deleteUserUseCase);
+  }
+
+  @Test
+  @DisplayName("Un token de un usuario eliminado ya no autentica (401)")
+  void shouldRejectTokenOfDeletedUser() throws Exception {
+    when(jwtTokenService.parse("old-token")).thenReturn(new JwtPrincipal(ID, UserRole.ADMIN));
+    when(getUserByIdPort.getById(new UserId(ID))).thenReturn(Optional.empty());
+
+    mockMvc
+        .perform(get("/api/users").header("Authorization", "Bearer old-token"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @DisplayName("El rol se toma de la base: un ADMIN degradado a MEMBER recibe 403")
+  void shouldUseCurrentRoleInsteadOfTokenClaim() throws Exception {
+    when(jwtTokenService.parse("old-token")).thenReturn(new JwtPrincipal(ID, UserRole.ADMIN));
+    when(getUserByIdPort.getById(new UserId(ID)))
+        .thenReturn(Optional.of(storedUser(UserRole.MEMBER, UserStatus.ACTIVE)));
+
+    mockMvc
+        .perform(delete("/api/users/{id}", ID).header("Authorization", "Bearer old-token"))
+        .andExpect(status().isForbidden());
+    verifyNoInteractions(deleteUserUseCase);
+  }
+
+  @Test
+  @DisplayName("PUT /api/users/{id} con JSON mal formado responde 400, no 500")
+  @WithMockUser(roles = "ADMIN")
+  void shouldReturnBadRequestForMalformedJson() throws Exception {
+    mockMvc
+        .perform(put("/api/users/{id}", ID).contentType(MediaType.APPLICATION_JSON).content("{\"name\":"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.status").value(400));
+  }
+
+  private static UserModel storedUser(final UserRole role, final UserStatus status) {
+    return new UserModel(
+        new UserId(ID),
+        new UserName("Ada Lovelace"),
+        new UserEmail("ada@example.com"),
+        UserPassword.fromHash("$2a$12$abcdefghijklmnopqrstuuuuuuuuuuuuuuuuuuuuuuuuuuuuu"),
+        role,
+        status);
   }
 }
