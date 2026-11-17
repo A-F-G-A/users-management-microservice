@@ -2,7 +2,9 @@ package com.jcaa.usersmanagement.infrastructure.entrypoint.rest.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.math.BigDecimal;
+import lombok.Builder;
 
+@Builder
 public record CellphoneRestResponse(
     String id, @JsonProperty("marca") String brand, String imei,
     @JsonProperty("pulgadas") BigDecimal screenSize,
