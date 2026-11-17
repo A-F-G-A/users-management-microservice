@@ -127,4 +127,13 @@ class UserPasswordTest {
     assertEquals(a, b);
     assertEquals(a.hashCode(), b.hashCode());
   }
+
+  @Test
+  @DisplayName("fromPlainText() acepta 72 bytes y rechaza más (límite de BCrypt) con error de dominio")
+  void shouldEnforceBcryptMaximumLength() {
+    assertTrue(UserPassword.fromPlainText("a".repeat(72)).verifyPlain("a".repeat(72)));
+    assertThrows(InvalidUserPasswordException.class, () -> UserPassword.fromPlainText("a".repeat(73)));
+    // 37 x 'ñ' = 74 bytes in UTF-8 although it is only 37 characters.
+    assertThrows(InvalidUserPasswordException.class, () -> UserPassword.fromPlainText("ñ".repeat(37)));
+  }
 }

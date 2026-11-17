@@ -7,6 +7,8 @@ import java.util.Objects;
 public final class UserPassword {
 
   private static final int MINIMUM_LENGTH = 8;
+  // BCrypt only uses the first 72 bytes; the library rejects longer input with IllegalArgumentException.
+  private static final int MAXIMUM_BYTES = 72;
   private static final int BCRYPT_COST = 12;
 
   private final String value;
@@ -24,6 +26,7 @@ public final class UserPassword {
         Objects.requireNonNull(plainText, "Password cannot be null").trim();
     validateNotEmpty(normalizedValue);
     validateMinimumLength(normalizedValue);
+    validateMaximumBytes(normalizedValue);
     final String hash =
         BCrypt.withDefaults().hashToString(BCRYPT_COST, normalizedValue.toCharArray());
     return new UserPassword(hash);
@@ -64,6 +67,12 @@ public final class UserPassword {
   private static void validateNotEmpty(final String normalizedValue) {
     if (normalizedValue.isEmpty()) {
       throw InvalidUserPasswordException.becauseValueIsEmpty();
+    }
+  }
+
+  private static void validateMaximumBytes(final String normalizedValue) {
+    if (normalizedValue.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAXIMUM_BYTES) {
+      throw InvalidUserPasswordException.becauseLengthIsTooLong(MAXIMUM_BYTES);
     }
   }
 

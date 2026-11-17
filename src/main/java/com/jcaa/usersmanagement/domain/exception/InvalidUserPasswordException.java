@@ -14,6 +14,11 @@ public final class InvalidUserPasswordException extends DomainException {
     return new InvalidUserPasswordException(MESSAGE_EMPTY);
   }
 
+  public static InvalidUserPasswordException becauseLengthIsTooLong(final int maximumBytes) {
+    return new InvalidUserPasswordException(
+        String.format("The user password must not exceed %d bytes (BCrypt limit).", maximumBytes));
+  }
+
   public static InvalidUserPasswordException becauseLengthIsTooShort(final int minimumLength) {
     return new InvalidUserPasswordException(String.format(MESSAGE_TOO_SHORT, minimumLength));
   }
