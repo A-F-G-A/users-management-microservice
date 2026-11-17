@@ -9,9 +9,6 @@ Spring es el único *composition root*: `Main` inicia el contexto y las dependen
 | Documento | Propósito |
 |---|---|
 | Este `README.md` | Documentación técnica: ejecución, configuración, arquitectura, seguridad, pruebas, Docker y CI |
-| [`docs/entrega-academica/Informe-Actividad-11-Celular.pdf`](docs/entrega-academica/Informe-Actividad-11-Celular.pdf) | Informe académico de la Actividad 11 (portada, índice, desarrollo y conclusiones) |
-| [`docs/entrega-academica/Guion-Sustentacion-Actividad-11.md`](docs/entrega-academica/Guion-Sustentacion-Actividad-11.md) | Guion de sustentación y demostración |
-| [`docs/informe-fuente/`](docs/informe-fuente/) | Fuente Markdown del informe y generador del PDF (`node docs/informe-fuente/generar-informe-pdf.js`) |
 | [`postman/`](postman/) | Colección y entorno de Postman |
 
 ## Arquitectura y paquetes
@@ -166,8 +163,7 @@ fijadas por SHA de commit y `persist-credentials: false`. Ejecuta `bash ./mvnw c
 imagen Docker.
 
 La API documenta los permisos mediante OpenAPI (versión tomada de `build-info`); Swagger UI
-está en `/swagger-ui.html`. El informe académico y el guion de sustentación están en
-`docs/entrega-academica/`.
+está en `/swagger-ui.html`.
 
 Estado verificado de CI: la [ejecución 43998749837](https://github.com/A-F-G-A/users-management-microservice/actions/runs/43998749837)
 (commit `8a12d5d`) terminó en **SUCCESS**: 297 pruebas unitarias y MockMvc aprobadas y 15
